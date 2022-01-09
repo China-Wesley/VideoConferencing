@@ -8,9 +8,10 @@
       "eslint:recommended",
       "plugin:@typescript-eslint/eslint-recommended",
       "plugin:@typescript-eslint/recommended",
-      "airbnb"
+      "airbnb",
+      "airbnb-typescript"
     ],
-    "rules":  {
-      "react/jsx-filename-extension": [2, { "extensions": [".js", ".jsx", ".ts", ".tsx"] }]
+    "parserOptions": {
+      "project": "./tsconfig.json"
     }
   }
