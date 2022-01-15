@@ -11,7 +11,12 @@
       "airbnb",
       "airbnb-typescript"
     ],
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    }
+    "overrides": [
+      {
+        "files": ["*.ts", "*.tsx"],
+        "parserOptions": {
+          "project": ["./tsconfig.json"]
+        }
+      }
+    ]
   }

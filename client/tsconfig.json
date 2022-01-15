@@ -21,6 +21,10 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "src"
+    "src",
+    "src/component/*.tsx",
+    "src/utils/*.ts",
+    "src/const/*.ts",
+    "src/interface/*.ts"
   ]
 }

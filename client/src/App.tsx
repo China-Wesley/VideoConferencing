@@ -1,10 +1,19 @@
 import React from 'react';
-import './App.scss';
+import { Route, Routes } from 'react-router-dom';
+import Login from './component/Login';
+import NoMatch from './component/NoMatch';
+import NavBar from './component/NavBar';
+import BaseBackground from './component/BaseBackground';
 
 function App() {
   return (
     <div className="App">
-      begin
+      <NavBar />
+      <BaseBackground />
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="*" element={<NoMatch />} />
+      </Routes>
     </div>
   );
 }

@@ -73,10 +73,15 @@
 {
   "compilerOptions": {
     "target": "es6",
+    // "types": ["node"],
     "module": "commonjs",
     "moduleResolution": "node",
     "downlevelIteration": true,
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "declaration": true,
+    "declarationDir": "./src/interface"
+    // "noImplicitReturns": true,
+    // "noUnusedLocals": true,
   }
 }

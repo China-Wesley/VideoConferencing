@@ -1,0 +1,32 @@
+.video-conferencing-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0.05rem 0;
+    z-index: 1;
+    // box-shadow: inset 3px -1px 0px rgba(0, 0, 0, 0.8);
+    &:after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+    }
+    .navbar-logo {
+        display: flex;
+        align-items: center;
+        margin-left: 0.5rem;
+        img {
+            width: 0.75rem;
+            margin-right: 0.25rem;
+        }
+        h1 {
+            font-size: 0.4rem;
+            color: #fff;
+        } 
+    }
+}

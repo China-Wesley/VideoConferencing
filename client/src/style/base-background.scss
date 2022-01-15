@@ -1,0 +1,86 @@
+.bg-ellipse-full-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+    background: linear-gradient(98.63deg,rgba(248,249,251,0.546) 20.59%,rgba(120,230,220,0) 89.33%);
+    background-image: linear-gradient(98.63deg, rgba(248, 249, 251, 0.545) 20.59%, rgba(120, 230, 220, 0) 89.33%);
+    .bg-ellipse-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        z-index: -1;
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+        .bg-ellipse {
+            position: absolute;
+            width: 86%;
+            height: 86%;
+            border-radius: 51%;
+            z-index: -1;
+            transition: transform .3s linear;
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+            perspective: 1000;
+        }
+        .bg-ellipse-wrapper .bg-ellipse-1 {
+            right: -25%;
+            top: 1%;
+            background: linear-gradient(44.11deg,rgba(139,233,223,0.75) 8.94%,rgba(255,255,255,0) 86.73%);
+            transform: rotate(-85.35deg);
+        }
+        .bg-ellipse-wrapper .bg-ellipse-2 {
+            left: -25%;
+            top: 50%;
+            background: linear-gradient(44.11deg,rgba(124,177,235,0.6) 8.94%,rgba(255,255,255,0) 86.73%);
+            transform: rotate(-21.57deg);
+        }
+        .bg-ellipse-wrapper .bg-ellipse-3 {
+            right: -1.38rem;
+            top: 11.7rem;
+            background: linear-gradient(44.11deg,rgba(245,198,39,0.6) 8.94%,rgba(255,255,255,0) 86.73%);
+            transform: scale(0.85) rotate(-63.95deg);
+        }
+        .bg-ellipse-wrapper .bg-ellipse-4 {
+            left: -2.32rem;
+            top: 15.6rem;
+            background: linear-gradient(44.11deg,rgba(139,233,223,0.75) 8.94%,rgba(255,255,255,0) 86.73%);
+            transform: rotate(-29.1deg);
+        }
+        .bg-ellipse-wrapper .bg-ellipse-5 {
+            right: -2.57rem;
+            top: 24.7rem;
+            background: linear-gradient(44.11deg,rgba(124,177,235,0.6) 8.94%,rgba(255,255,255,0) 86.73%);
+            transform: rotate(-70.95deg);
+        }
+        .bg-ellipse-wrapper .bg-ellipse-6 {
+            left: -2.73rem;
+            top: 30.5rem;
+            background: linear-gradient(44.11deg,rgba(245,198,39,0.6) 8.94%,rgba(255,255,255,0) 86.73%);
+            transform: scale(0.95) rotate(-21.57deg);
+        }
+        .bg-ellipse-wrapper .bg-ellipse-7 {
+            right: -3.07rem;
+            top: 43.5rem;
+            background: linear-gradient(44.11deg,rgba(139,233,223,0.75) 8.94%,rgba(255,255,255,0) 86.73%);
+            -webkit-transform: scale(0.85) rotate(-93.95deg);
+            -ms-transform: scale(0.85) rotate(-93.95deg);
+            transform: scale(0.85) rotate(-93.95deg);
+        }
+        .bg-ellipse-wrapper .bg-ellipse-8 {
+            left: -2.43rem;
+            top: 54.5rem;
+            background: linear-gradient(44.11deg,rgba(124,177,235,0.6) 8.94%,rgba(255,255,255,0) 86.73%);
+            -webkit-transform: rotate(-21.95deg);
+            -ms-transform: rotate(-21.95deg);
+            transform: rotate(-21.95deg);
+        }
+    }
+}
