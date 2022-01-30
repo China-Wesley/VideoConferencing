@@ -8,11 +8,13 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { getGuGongImage } from '../utils/gugong_wallImage';
 import { loadImage } from '../utils/utils';
 import { serve } from '../const/api';
 import useMessage from './hook/useMessage';
 // import useAnimation from './hook/useAnimation';
+import logo200 from '../static/logo200.png';
 
 export default function Login() {
   const {
@@ -20,6 +22,7 @@ export default function Login() {
   } = useForm();
   const [backgroundImage, setBackgroundImage] = useState('');
   const [isSign, setIsSign] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     getGuGongImage().then((imageUrl: string) => {
@@ -45,15 +48,16 @@ export default function Login() {
 
   const loginIn = (data: any) => {
     console.log(data);
-    const { userName, userPassword } = data;
-    axios.post(`${serve.domain}/user/login`, {
-      name: userName,
-      password: userPassword,
-    }).then((response) => {
-      console.log(response);
-    }).catch((error) => {
-      console.log(error);
-    });
+    navigate('/createRoom', { replace: true });
+    // const { userName, userPassword } = data;
+    // axios.post(`${serve.domain}/user/login`, {
+    //   name: userName,
+    //   password: userPassword,
+    // }).then((response) => {
+    //   console.log(response);
+    // }).catch((error) => {
+    //   console.log(error);
+    // });
   };
 
   const signUp = (data: any) => {
@@ -100,6 +104,21 @@ export default function Login() {
           padding: 5,
         }}
       >
+        <Box
+          component="img"
+          sx={{
+            // width: 0.05,
+            // height: 1,
+            // marginLeft: '10px',
+            position: 'absolute',
+            right: '40px',
+            top: '40px',
+            minWidth: '50px',
+            width: '10%',
+          }}
+          alt="Logo"
+          src={logo200}
+        />
         {/** *********************** 登录 ************************** */}
         {/* {!isSign && useAnimation(
           ( */}

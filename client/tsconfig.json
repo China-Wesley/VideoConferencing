@@ -22,7 +22,7 @@
   },
   "include": [
     "src",
-    "src/component/*.tsx",
+    "src/page/*.tsx",
     "src/utils/*.ts",
     "src/const/*.ts",
     "src/interface/*.ts"
