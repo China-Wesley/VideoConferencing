@@ -1,7 +1,11 @@
+/* eslint-disable max-len */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable jsx-a11y/media-has-caption */
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable no-sparse-arrays */
-import React, { useState } from 'react';
+import React, {
+  useState, useEffect, useContext,
+} from 'react';
 import { styled, useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -19,20 +23,22 @@ import {
 } from '@mui/icons-material';
 import UserControl from './component/UserControl';
 import TabPanel from './component/TabPanel';
+import { RTCStream as RTCStreamContext, Room as RoomContext } from '../context/index';
+import useConnect from './hook/useConnect';
+import usePublish from './hook/usePublish';
+import useSubscribe from './hook/useSubscribe';
+import Videox from './component/Videox';
 
 const drawerWidth = 400;
 
 function stringToColor(string: string) {
   let hash = 0;
   let i;
-
   /* eslint-disable no-bitwise */
   for (i = 0; i < string.length; i += 1) {
     hash = string.charCodeAt(i) + ((hash << 5) - hash);
   }
-
   let color = '#';
-
   for (i = 0; i < 3; i += 1) {
     const value = (hash >> (i * 8)) & 0xff;
     color += `00${value.toString(16)}`.substr(-2);
@@ -80,6 +86,53 @@ export default function PersistentDrawerRight() {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const [tabValue, setTabValue] = useState(0);
+  const { RTCStream } = useContext(RTCStreamContext);
+  const { room } = useContext(RoomContext);
+  const [videoSources, setVideoSources] = useState([] as any);
+  //   const peimaryVideo: any = useRef();
+
+  const getRoomId = () => {
+    if (room && room.roomId) {
+      return room.roomId;
+    }
+    const location = window.location.pathname;
+    const paths = location.split('/') || [];
+    return paths[(paths.length - 1) >= 0 ? (paths.length - 1) : 0];
+  };
+
+  useEffect(() => {
+    // peimaryVideo.current && (peimaryVideo.current.srcObject = RTCStream);
+
+    // connect
+    const {
+      socketConnected, socketDisconnect, socketError,
+    } = useConnect({ path: `/${getRoomId()}` });
+
+    socketConnected((device: any, socket: any) => {
+      console.log('connected', device, socket);
+      // publish
+      usePublish({ device, socket, stream: RTCStream })
+        .then(() => useSubscribe({ device, socket }))
+        .then((subScribe: any) => {
+          const { stream } = subScribe;
+          setVideoSources([...videoSources, stream]);
+          //   console.log(stream, window.URL.createObjectURL(stream));
+        //   peimaryVideo.current.srcObject = stream;
+        //   console.log(stream.getVideoTracks(), 123123);
+        })
+        .catch((error: any) => {
+          console.log(error, 'error--->');
+        });
+    });
+    socketDisconnect(() => {
+      console.log('disconnect');
+    });
+    socketError(() => {
+      console.log('error');
+    });
+
+    // subscribe
+  }, []);
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -108,14 +161,23 @@ export default function PersistentDrawerRight() {
         }}
         >
           {
-            [1, 2, 3, 2, 2, 2, 2, 2, 1, 1].map((item) => (
+            videoSources.map((item: any) => (
               <Box
-                key={item}
+                key={item.id}
                 sx={{
                   flex: '0 0 200px', height: '100%', backgroundColor: '#ccc', margin: '0 5px',
                 }}
               >
-                <video style={{ width: '100%', height: '100%', backgroundColor: '#000' }} autoPlay src="http://cloud.video.taobao.com/play/u/2201428260/p/1/e/6/t/1/331877227943.mp4" />
+                {item[0]}
+                {/* <video style={{ width: '100%', height: '100%', backgroundColor: '#000' }} autoPlay src="" /> */}
+                <Videox
+                    // ref={testVideo}
+                  width="100%"
+                  height="100%"
+                  micOpen
+                  camOpen
+                  stream={item}
+                />
               </Box>
             ))
         }
@@ -124,7 +186,19 @@ export default function PersistentDrawerRight() {
           display: 'flex', overflowX: 'scroll', justifyContent: 'center', flex: '6',
         }}
         >
-          <video style={{ width: '100%', height: '100%', backgroundColor: '#000' }} autoPlay src="http://cloud.video.taobao.com/play/u/2201428260/p/1/e/6/t/1/331877227943.mp4" />
+          <Videox
+              // ref={testVideo}
+            width="100%"
+            height="100%"
+            micOpen
+            camOpen
+            stream={RTCStream}
+            style={{
+              video: {
+                maxHeight: '100%',
+              },
+            }}
+          />
         </Box>
         <UserControl onDrawerOpen={handleDrawerOpen} />
       </Main>

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react/jsx-props-no-spreading */
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
@@ -10,12 +10,40 @@ import Typography from '@mui/material/Typography';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { serve } from '../const/api';
+import useMessage from './hook/useMessage';
+import { Room, User } from '../context/index';
 import logo200 from '../static/logo200.png';
+
+const passwordRegister = {
+  minLength: {
+    value: 6,
+    message: '密码不能少于6位',
+  },
+  maxLength: {
+    value: 18,
+    message: '密码不能多于18位',
+  },
+};
+
+const roomIdRegister = {
+  minLength: {
+    value: 6,
+    message: '房间号为6位数字！',
+  },
+  maxLength: {
+    value: 6,
+    message: '房间号为6位数字！',
+  },
+};
 
 export default function CreateRoom() {
   const [layout, setLayout] = useState('basic');
   const [codeRequire, setCodeRequire] = useState(false);
+  const { setRoom } = useContext(Room);
+  const { setUser } = useContext(User);
   const navigate = useNavigate();
 
   const {
@@ -24,6 +52,34 @@ export default function CreateRoom() {
     handleSubmit,
     // reset, setError,
   } = useForm();
+
+  const handelCreateRoom = (data: any) => {
+    axios.post(`${serve.domain}/room/createRoom`, { ...data }).then((res: any) => {
+      if (res && res.code === 1) {
+        useMessage(res.message, { type: 'success' });
+        setRoom(res.data);
+        navigate('/mediaTest', { replace: true });
+      } else {
+        useMessage(res.message, { type: 'error' });
+      }
+    }).catch((error) => {
+      useMessage(`${error.message}::网络错误`, { type: 'error' });
+    });
+  };
+
+  const handelJoinRoom = (data: any) => {
+    axios.post(`${serve.domain}/room/enterRoom`, { ...data }).then((res: any) => {
+      if (res && res.code === 1) {
+        useMessage(res.message, { type: 'success' });
+        setRoom(res.data);
+        navigate('/mediaTest', { replace: true });
+      } else {
+        useMessage(res.message, { type: 'error' });
+      }
+    }).catch((error) => {
+      useMessage(`${error.message}::网络错误`, { type: 'error' });
+    });
+  };
 
   return (
     <div>
@@ -89,9 +145,7 @@ export default function CreateRoom() {
           layout === 'create' && (
             <Box
               component="form"
-              onSubmit={handleSubmit(() => {
-                console.log('进入房间咯');
-              })}
+              onSubmit={handleSubmit(handelCreateRoom)}
             >
               <Typography
                 variant="h5"
@@ -112,20 +166,6 @@ export default function CreateRoom() {
                 <ExitToAppIcon />
               </Button>
               <TextField
-                error={Boolean(errors.createRomId)}
-                sx={{
-                  width: '100%',
-                  marginBottom: 2,
-                }}
-                  // id="outlined-basic"
-                label="房间号"
-                variant="outlined"
-                helperText={
-                    errors.createRomId ? errors.createRomId.message : ''
-                  }
-                {...register('createRomId', { required: '房间号不能为空！' })}
-              />
-              <TextField
                 error={Boolean(errors.roomCode)}
                 sx={{
                   width: '100%',
@@ -134,8 +174,11 @@ export default function CreateRoom() {
                 disabled={!codeRequire}
                   // id="outlined-basic"
                 label={codeRequire ? '房间密码' : '无密码'}
+                helperText={
+                  errors.roomCode ? errors.roomCode.message : '密码位6-18位任意字符！'
+                }
                 variant="outlined"
-                {...register('roomCode')}
+                {...register('roomCode', { required: (codeRequire ? '密码不能为空！' : false), ...passwordRegister })}
               />
               <FormControlLabel
                 control={(
@@ -164,13 +207,9 @@ export default function CreateRoom() {
         }
         {
           layout === 'enter' && (
-
           <Box
             component="form"
-            onSubmit={handleSubmit(() => {
-              console.log('进入房间咯');
-              navigate('/room:id', { replace: true });
-            })}
+            onSubmit={handleSubmit(handelJoinRoom)}
           >
             <Typography
               variant="h5"
@@ -200,9 +239,23 @@ export default function CreateRoom() {
               label="房间号"
               variant="outlined"
               helperText={
-                    errors.roomId ? errors.roomId.message : ''
+                    errors.roomId ? errors.roomId.message : '房间号为6位数字'
                   }
-              {...register('roomId', { required: '房间号不能为空！' })}
+              {...register('roomId', { required: '房间号不能为空！', ...roomIdRegister })}
+            />
+            <TextField
+              error={Boolean(errors.enterRoomCode)}
+              sx={{
+                width: '100%',
+                marginBottom: 2,
+              }}
+                  // id="outlined-basic"
+              label="密码"
+              variant="outlined"
+              helperText={
+                    errors.enterRoomCode ? errors.enterRoomCode.message : '密码可以为空'
+              }
+              {...register('enterRoomCode', { required: false, ...passwordRegister })}
             />
             <Button
               type="submit"

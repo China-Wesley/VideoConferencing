@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-closing-tag-location */
 /* eslint-disable react/jsx-props-no-spreading */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
@@ -9,12 +9,40 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import Cookie from 'js-cookie';
 import { getGuGongImage } from '../utils/gugong_wallImage';
 import { loadImage } from '../utils/utils';
 import { serve } from '../const/api';
 import useMessage from './hook/useMessage';
 // import useAnimation from './hook/useAnimation';
 import logo200 from '../static/logo200.png';
+import { User } from '../context/index';
+
+const passwordRegister = {
+  minLength: {
+    value: 6,
+    message: '密码不能少于6位',
+  },
+  maxLength: {
+    value: 18,
+    message: '密码不能多于18位',
+  },
+};
+
+const nameRegister = {
+  minLength: {
+    value: 3,
+    message: '用户名不能少于3位',
+  },
+  maxLength: {
+    value: 10,
+    message: '用户名不能多于10位',
+  },
+};
+
+const passwordHelpText = '密码为6-18位之间的任意字符';
+
+const nameHelpText = '用户名为3-10位之间的任意字符';
 
 export default function Login() {
   const {
@@ -22,6 +50,7 @@ export default function Login() {
   } = useForm();
   const [backgroundImage, setBackgroundImage] = useState('');
   const [isSign, setIsSign] = useState(false);
+  const { setUser } = useContext(User);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,14 +61,14 @@ export default function Login() {
         // 监控
       });
     });
+    const vuser = Cookie.get('vuser');
+    if (vuser) {
+      navigate('/createRoom', { replace: true });
+    }
     return () => {
       // cleanup
     };
   }, []);
-
-  useEffect(() => {
-    console.log(errors);
-  }, [errors]);
 
   const changeTemplate = () => {
     setIsSign(!isSign);
@@ -47,17 +76,27 @@ export default function Login() {
   };
 
   const loginIn = (data: any) => {
-    console.log(data);
-    navigate('/createRoom', { replace: true });
-    // const { userName, userPassword } = data;
-    // axios.post(`${serve.domain}/user/login`, {
-    //   name: userName,
-    //   password: userPassword,
-    // }).then((response) => {
-    //   console.log(response);
-    // }).catch((error) => {
-    //   console.log(error);
-    // });
+    const { userName, userPassword } = data;
+    axios.post(`${serve.domain}/user/login`, {
+      name: userName,
+      password: userPassword,
+    }).then((res: any) => {
+      if (res && res.code === 1) {
+        useMessage(res.message, {
+          type: 'success',
+        });
+        navigate('/createRoom', { replace: true });
+        setUser(res.data);
+      } else {
+        useMessage(res.message, {
+          type: 'error',
+        });
+      }
+    }).catch((error) => {
+      useMessage(`${error.message}::网络错误`, {
+        type: 'error',
+      });
+    });
   };
 
   const signUp = (data: any) => {
@@ -70,18 +109,19 @@ export default function Login() {
         name: signUserName,
         password: confirmUserPassword,
       }).then((res: any) => {
-        console.warn(res);
         if (res && res.code === 1) {
-          useMessage('登录成功！', {
+          useMessage(res.message, {
             type: 'success',
           });
+          navigate('/createRoom', { replace: true });
+          setUser(res.data);
         } else {
           useMessage(res.message, {
             type: 'error',
           });
         }
       }).catch((error) => {
-        useMessage(error.message, {
+        useMessage(`${error.message}::网络错误`, {
           type: 'error',
         });
       });
@@ -157,9 +197,9 @@ export default function Login() {
                 label="帐号"
                 variant="outlined"
                 helperText={
-                  errors.userName ? errors.userName.message : ''
+                  errors.userName ? errors.userName.message : nameHelpText
                 }
-                {...register('userName', { required: '用户名不能为空！' })}
+                {...register('userName', { required: '用户名不能为空！', ...nameRegister })}
               />
               <TextField
                 error={Boolean(errors.userPassword)}
@@ -172,9 +212,9 @@ export default function Login() {
                 type="password"
                 variant="outlined"
                 helperText={
-                  errors.userPassword ? errors.userPassword.message : ''
+                  errors.userPassword ? errors.userPassword.message : passwordHelpText
                 }
-                {...register('userPassword', { required: '密码不能为空！' })}
+                {...register('userPassword', { required: '密码不能为空！', ...passwordRegister })}
               />
               <Button onClick={changeTemplate}>
                 忘记密码？
@@ -228,9 +268,9 @@ export default function Login() {
             label="帐号"
             variant="outlined"
             helperText={
-              errors.signUserName ? errors.signUserName.message : ''
+              errors.signUserName ? errors.signUserName.message : nameHelpText
             }
-            {...register('signUserName', { required: '用户名不能为空！' })}
+            {...register('signUserName', { required: '用户名不能为空！', ...nameRegister })}
           />
           <TextField
             error={Boolean(errors.signUserPassword)}
@@ -242,10 +282,11 @@ export default function Login() {
             type="password"
             variant="outlined"
             helperText={
-              errors.signUserPassword ? errors.signUserPassword.message : ''
+              errors.signUserPassword ? errors.signUserPassword.message : passwordHelpText
             }
             {...register('signUserPassword', {
               required: '密码不能为空！',
+              ...passwordRegister,
             })}
           />
           <TextField
@@ -262,6 +303,7 @@ export default function Login() {
             }
             {...register('confirmUserPassword', {
               required: '确认密码不能为空！',
+              ...passwordRegister,
             })}
           />
           <Button

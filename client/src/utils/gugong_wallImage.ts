@@ -63,7 +63,6 @@ const requestWallPage = () => new Promise<string>((resolve, reject) => {
     originUrl: `${gugong.wallPage}${randomPage}.html`,
     methods: 'get',
   }).then((res: any) => {
-    console.log(res);
     // 埋点
     if (res && res.code === 1) {
       const responseText: string = res.data;

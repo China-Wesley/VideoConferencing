@@ -2,6 +2,7 @@
 // const { Sequelize } = require('sequelize');
 import { DataTypes, Sequelize } from 'sequelize';
 import userModel from './model/user';
+import roomModel from './model/room';
 const sequelize = new Sequelize('demo', 'root', '00000000', {
   host: 'localhost',
   dialect: 'mysql'
@@ -9,9 +10,10 @@ const sequelize = new Sequelize('demo', 'root', '00000000', {
 
 const initModel = () => {
   const User = userModel(sequelize, DataTypes);
-
+  const Room = roomModel(sequelize, DataTypes);
   return {
-    User
+    User,
+    Room
   };
 };
 

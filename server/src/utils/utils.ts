@@ -14,3 +14,15 @@ exports.handleAxiosError = (error: axios.AxiosError) => {
   }
   return error.message;
 };
+
+exports.randomNum = () => {
+  let mm = Math.random();
+  let six = 0;
+  if (mm > 0.1) {
+    six = Math.round(mm * 1000000);
+  } else {
+    mm += 0.1;
+    six = Math.round(mm * 1000000);
+  }
+  return six;
+};

@@ -8,4 +8,5 @@ export interface GugongApi {
 
 export interface Server {
   domain: string;
+  listenPort: number;
 }

@@ -10,7 +10,8 @@ export const gugong: GugongApi = {
 };
 
 export const serve: Server = {
-  domain: 'http://localhost:3000',
+  domain: 'https://localhost:3000',
+  listenPort: 3000,
 };
 
 export default {

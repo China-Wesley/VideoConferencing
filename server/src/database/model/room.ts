@@ -1,5 +1,5 @@
 export default (sequelize, DataTypes) => {
-  const User = sequelize.define('Users', {
+  const Room = sequelize.define('Rooms', {
     id: {
       type: DataTypes.INTEGER.UNSIGNED,
       primaryKey: true,
@@ -9,15 +9,10 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       defaultValue: sequelize.UUIDV4
     },
-    name: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      unique: true
-    },
     password: {
       type: DataTypes.STRING(50),
-      allowNull: false
+      allowNull: true
     }
   });
-  return User;
+  return Room;
 };
