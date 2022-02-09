@@ -17,6 +17,10 @@ export default (sequelize, DataTypes) => {
     password: {
       type: DataTypes.STRING(50),
       allowNull: false
+    },
+    roomId: {
+      type: DataTypes.UUID,
+      defaultValue: null
     }
   });
   return User;

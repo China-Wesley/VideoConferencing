@@ -1,7 +1,6 @@
 /* eslint-disable react/jsx-closing-tag-location */
 /* eslint-disable react/jsx-props-no-spreading */
 import React, { useEffect, useState, useContext } from 'react';
-import axios from 'axios';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
@@ -12,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import Cookie from 'js-cookie';
 import { getGuGongImage } from '../utils/gugong_wallImage';
 import { loadImage } from '../utils/utils';
+import axios from '../utils/interceptor';
 import { serve } from '../const/api';
 import useMessage from './hook/useMessage';
 // import useAnimation from './hook/useAnimation';
@@ -85,7 +85,7 @@ export default function Login() {
         useMessage(res.message, {
           type: 'success',
         });
-        navigate('/createRoom', { replace: true });
+        navigate('/createRoom', { replace: false });
         setUser(res.data);
       } else {
         useMessage(res.message, {

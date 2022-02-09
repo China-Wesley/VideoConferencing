@@ -6,8 +6,8 @@ module.exports = {
   mediasoup: {
     // Worker settings
     worker: {
-      rtcMinPort: 10000,
-      rtcMaxPort: 10100,
+      rtcMinPort: 30000,
+      rtcMaxPort: 39999,
       logLevel: 'warn',
       logTags: [
         'info',

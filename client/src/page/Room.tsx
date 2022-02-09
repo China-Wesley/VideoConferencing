@@ -4,7 +4,7 @@
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable no-sparse-arrays */
 import React, {
-  useState, useEffect, useContext,
+  useState, useEffect, useContext, useRef,
 } from 'react';
 import { styled, useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -23,11 +23,13 @@ import {
 } from '@mui/icons-material';
 import UserControl from './component/UserControl';
 import TabPanel from './component/TabPanel';
-import { RTCStream as RTCStreamContext, Room as RoomContext } from '../context/index';
+import { RTCStream as RTCStreamContext, Room as RoomContext, User as UserContext } from '../context/index';
 import useConnect from './hook/useConnect';
 import usePublish from './hook/usePublish';
 import useSubscribe from './hook/useSubscribe';
 import Videox from './component/Videox';
+import useMessage from './hook/useMessage';
+import { getMedia } from '../utils/utils';
 
 const drawerWidth = 400;
 
@@ -88,7 +90,12 @@ export default function PersistentDrawerRight() {
   const [tabValue, setTabValue] = useState(0);
   const { RTCStream } = useContext(RTCStreamContext);
   const { room } = useContext(RoomContext);
+  const { user } = useContext(UserContext);
+  const streamCache: any = useRef({});
+  const socketCache: any = useRef();
+  const addProducerFunc: any = useRef();
   const [videoSources, setVideoSources] = useState([] as any);
+  // const [publishTransport, setPublishTransport] = useState(null);
   //   const peimaryVideo: any = useRef();
 
   const getRoomId = () => {
@@ -100,38 +107,84 @@ export default function PersistentDrawerRight() {
     return paths[(paths.length - 1) >= 0 ? (paths.length - 1) : 0];
   };
 
-  useEffect(() => {
-    // peimaryVideo.current && (peimaryVideo.current.srcObject = RTCStream);
+  const shareScreen = () => {
+    getMedia({ video: true }, true).then((stream: any) => {
+      addProducerFunc.current(stream, true);
+    }).catch((error: any) => {
+      useMessage(error.message, { type: 'error' });
+    });
+  };
 
-    // connect
+  useEffect(() => {
     const {
-      socketConnected, socketDisconnect, socketError,
-    } = useConnect({ path: `/${getRoomId()}` });
+      socketConnected,
+    } = useConnect({ path: `/${getRoomId()}` }, { userId: user.uuid });
 
     socketConnected((device: any, socket: any) => {
-      console.log('connected', device, socket);
       // publish
-      usePublish({ device, socket, stream: RTCStream })
-        .then(() => useSubscribe({ device, socket }))
-        .then((subScribe: any) => {
+      socketCache.current = socket;
+      socket.on('someoneExitRoom', (data: any) => {
+        const { userId } = data;
+        delete streamCache.current[userId];
+        const tempSources: any[] = [];
+        Object.keys(streamCache.current).forEach((id: string) => {
+          tempSources.push(streamCache.current[id]);
+        });
+        setVideoSources([...tempSources]);
+      });
+      socket.on('broadcast', (data: any) => {
+        const { userId } = data;
+        useSubscribe({ device, socket, memberId: userId }).then((subScribe: any) => {
           const { stream } = subScribe;
-          setVideoSources([...videoSources, stream]);
-          //   console.log(stream, window.URL.createObjectURL(stream));
-        //   peimaryVideo.current.srcObject = stream;
-        //   console.log(stream.getVideoTracks(), 123123);
+          streamCache.current[userId] = stream;
+          const tempSources: any[] = [];
+          Object.keys(streamCache.current).forEach((id: string) => {
+            tempSources.push(streamCache.current[id]);
+          });
+          setVideoSources([...tempSources]);
+        }).catch((error: any) => {
+          console.log(error);
+        });
+      });
+      usePublish({
+        device, socket, stream: RTCStream,
+      })
+        .then((publishRes: any) => {
+          const { addProducer } = publishRes;
+          addProducerFunc.current = addProducer;
+          socket.socketEmit('checkRoom')
+            .then((checkData: any) => {
+              const { hasMember, member } = checkData;
+              if (hasMember) {
+                let count = 0;
+                member.forEach((memberId: string) => {
+                  useSubscribe({ device, socket, memberId }).then((subScribe: any) => {
+                    const { stream } = subScribe;
+
+                    count += 1;
+                    streamCache.current[memberId] = stream;
+                    if (member.length === count) {
+                      const tempSources: any[] = [];
+                      Object.keys(streamCache.current).forEach((id: string) => {
+                        tempSources.push(streamCache.current[id]);
+                      });
+                      setVideoSources([...tempSources]);
+                    }
+                  }).catch((error: any) => {
+                    console.log(error);
+                  });
+                });
+              } else {
+                useMessage('房间目前只有您一位成员，快去邀请其他人吧！', { type: 'warning' });
+              }
+            }).catch((error: any) => {
+              console.log(error, 'checkRoom--->');
+            });
         })
         .catch((error: any) => {
           console.log(error, 'error--->');
         });
     });
-    socketDisconnect(() => {
-      console.log('disconnect');
-    });
-    socketError(() => {
-      console.log('error');
-    });
-
-    // subscribe
   }, []);
 
   const handleDrawerOpen = () => {
@@ -144,6 +197,10 @@ export default function PersistentDrawerRight() {
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+  };
+
+  const handleExitRoom = () => {
+    socketCache.current && socketCache.current.disconnect();
   };
 
   return (
@@ -200,7 +257,7 @@ export default function PersistentDrawerRight() {
             }}
           />
         </Box>
-        <UserControl onDrawerOpen={handleDrawerOpen} />
+        <UserControl onDrawerOpen={handleDrawerOpen} onExitRoom={handleExitRoom} onShareScreen={shareScreen} />
       </Main>
       <Drawer
         sx={{

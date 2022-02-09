@@ -14,7 +14,7 @@ const opts = {
 
 const serverUrl = `https://${hostname}:${serve.listenPort}`;
 
-export default function useConnect(socketConfig: any) {
+export default function useConnect(socketConfig: any, otherConfig?: any) {
   let socket: any;
   let device: any;
 
@@ -31,20 +31,24 @@ export default function useConnect(socketConfig: any) {
   let socketErrorCallback: any = () => {};
   const socketError = (callback: any) => { socketErrorCallback = callback; };
 
-  //   const socketDisconnectCallback = useRef(() => {});
-  //   const socketDisconnect = useCallback((callback) => { socketDisconnectCallback.current = callback; }, []);
-
   socketConnectingCallback();
 
   socket = socketClient(serverUrl, { ...opts, ...socketConfig }); // socket.io 自动创建链接
 
-  socket.socketEmit = socketEmit(socket);
+  socket.socketEmit = socketEmit(socket, { userId: otherConfig.userId });
+
+  if (window.onbeforeunload) {
+    window.onbeforeunload = () => {
+      socket.disconnect();
+    };
+  }
 
   socket.on('connect', async () => {
     // emit getRouterRtpCapabilities
-    const rtpCapabilities = await socket.socketEmit('getRouterRtpCapabilities'); // 获取rtp， 信令交换
-
+    const rtpCapabilities = await socket.socketEmit('getRouterRtpCapabilities').catch(() => {}); // 获取rtp， 信令交换
     // 加载设备，创建peer connection
+    await socket.socketEmit('store').catch(() => { console.log('store 失败'); });
+    console.log(socket, 'socket--->');
     device = await loadDevice(rtpCapabilities).catch(() => {
       useMessage('创建 Peer Connection 失败！', { type: 'error' });
     });
@@ -53,23 +57,15 @@ export default function useConnect(socketConfig: any) {
   // 监听
   // 关闭链接
   socket.on('disconnect', () => {
+    console.warn('链接断开');
+    // socket.socketEmit('disconnect');
     socketDisconnectCallback();
-    // $txtConnection.innerHTML = 'Disconnected';
-    // $btnConnect.disabled = false;
-    // $fsPublish.disabled = true;
-    // $fsSubscribe.disabled = true;
   });
   // 链接出错
   socket.on('connect_error', (error: any) => {
+    console.warn('链接错误');
     socketErrorCallback(error);
-    // console.error('could not connect to %s%s (%s)', serverUrl, opts.path, error.message);
-    // $txtConnection.innerHTML = 'Connection failed';
-    // $btnConnect.disabled = false;
   });
-
-  //   socket.on('newProducer', () => {
-  // $fsSubscribe.disabled = false;
-  //   });
 
   return {
     socketConnecting,

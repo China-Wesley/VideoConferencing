@@ -1,9 +1,13 @@
 /* eslint-disable max-len */
 export default function usePublish(props: any) {
-  const { socket, device, stream } = props;
+  const {
+    socket, device, stream,
+  } = props;
   let producer;
   let transport: any;
-
+  let produceNumber: number;
+  let currentProduce = 0;
+  let isScreen = false;
   // connecting hook
   let transportConnectCallback = () => {};
   const transportConnect = (callback: any) => { transportConnectCallback = callback; };
@@ -11,14 +15,22 @@ export default function usePublish(props: any) {
   let transportConnectErrorCallback = () => {};
   const transportConnectError = (callback: any) => { transportConnectErrorCallback = callback; };
   // disconnect hook
-  let transportProduceCallback = () => {};
+  let transportProduceCallback: any = () => {};
   const transportProduce = (callback: any) => { transportProduceCallback = callback; };
 
   let transportProduceErrorCallback: any = () => {};
   const transportProduceError = (callback: any) => { transportProduceErrorCallback = callback; };
 
-  //   const transportConnectedCallback = useRef(() => {});
-  //   const transportConnected = useCallback((callback) => { transportConnectedCallback.current = callback; }, []);
+  const addProducer = (otherStream: any, screen = false) => {
+    isScreen = screen;
+    const tracks = otherStream.getTracks();
+    produceNumber = tracks.length;
+    return Promise.all(tracks.map((track: any) => {
+      const produceParams = { track };
+      return transport.produce(produceParams);
+    }));
+  };
+  // let addProducer = () => {};
 
   return new Promise((resolve, reject) => {
     // 服务端创建一个produceTransport 以接收承载即将发送过来的数据流
@@ -30,12 +42,11 @@ export default function usePublish(props: any) {
         console.error(params.error);
         return new Error(params.error);
       }
-
+      console.log(params);
       transport = device.createSendTransport(params);
 
       // 监听该transport的事件。
       transport.on('connect', async ({ dtlsParameters }: any, callback: any, errback: any) => {
-      // console.warn('transport connect--->');
         socket.socketEmit('connectProducerTransport', { dtlsParameters })
           .then(callback)
           .catch(errback);
@@ -44,12 +55,16 @@ export default function usePublish(props: any) {
       transport.on('produce', async ({ kind, rtpParameters }: any, callback: any, errback: any) => {
         try {
         // emit produce
-          const { id } = await socket.socketEmit('produce', {
+          currentProduce += 1;
+          const { id, userId } = await socket.socketEmit('produce', {
             transportId: transport.id,
             kind,
             rtpParameters,
+            shouldBroadcast: produceNumber === currentProduce,
+            isScreen,
           });
-          transportProduceCallback();
+          console.log(123123, id);
+          transportProduceCallback(userId);
           callback({ id });
         } catch (err) {
           transportProduceErrorCallback();
@@ -63,7 +78,6 @@ export default function usePublish(props: any) {
 
           case 'connected':
           // 钩子
-          // document.querySelector('#local_video').srcObject = stream;
             transportConnectCallback();
 
             break;
@@ -78,6 +92,7 @@ export default function usePublish(props: any) {
       });
 
       const tracks = stream.getTracks(); // 获取视频轨道
+      produceNumber = tracks.length;
       return Promise.all(tracks.map((track: any) => {
         const produceParams = { track };
         return transport.produce(produceParams);
@@ -101,6 +116,7 @@ export default function usePublish(props: any) {
       resolve({
         producer,
         transport,
+        addProducer,
         transportConnect,
         transportConnectError,
         transportProduce,

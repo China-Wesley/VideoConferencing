@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 /* eslint-disable prefer-promise-reject-errors */
-import axios, { AxiosError } from 'axios';
+import axios from './interceptor';
 import { gugong, serve } from '../const/api';
 import { random } from './utils';
 
@@ -90,7 +90,7 @@ const requestWallPage = () => new Promise<string>((resolve, reject) => {
         message: 'request gugong wallImage api error!',
       });
     }
-  }).catch((error: AxiosError) => {
+  }).catch((error: any) => {
     // 监控
     reject({
       name: 'GUGONG_REQUESTWALLPAGE_ERROR',

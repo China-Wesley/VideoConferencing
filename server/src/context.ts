@@ -10,12 +10,15 @@ class CurContext {
 
   mediasoupRouter: any;
 
+  mediasoupData: any;
+
   constructor(props?: any) {
     this.webServer = null;
     this.expressApp = null;
     this.socketServer = {};
     this.mediasoupWorker = {};
     this.mediasoupRouter = {};
+    this.mediasoupData = {};
   }
 }
 

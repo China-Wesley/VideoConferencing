@@ -14,6 +14,8 @@ import {
   Forum as ForumIcon,
   MoreHoriz as MoreHorizIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import useDialog from '../hook/useDialog';
 
 const commonBtnStyle = {
   height: '100%',
@@ -23,12 +25,15 @@ const commonBtnStyle = {
 
 interface UserControlProps {
   onDrawerOpen: () => void;
+  onExitRoom: () => void;
+  onShareScreen: () => void;
 }
 
 export default function UserControl(props: UserControlProps) {
-  const { onDrawerOpen } = props;
+  const { onDrawerOpen, onExitRoom, onShareScreen } = props;
   const [videoOpen, setVideoOpen] = useState(true);
   const [audioOpen, setAudioOpen] = useState(true);
+  const navigate = useNavigate();
   return (
     <Box
       component="footer"
@@ -85,7 +90,13 @@ export default function UserControl(props: UserControlProps) {
         >
           <InterpreterModeIcon />
         </IconButton>
-        <IconButton className="control-btn" sx={{ ...commonBtnStyle, color: '#00c853' }}>
+        <IconButton
+          className="control-btn"
+          sx={{ ...commonBtnStyle, color: '#00c853' }}
+          onClick={() => {
+            onShareScreen();
+          }}
+        >
           <ScreenShareIcon />
         </IconButton>
         <IconButton
@@ -101,7 +112,20 @@ export default function UserControl(props: UserControlProps) {
           <MoreHorizIcon />
         </IconButton>
       </Stack>
-      <Button className="control-btn" color="error" sx={{ padding: '0 20px' }}>
+      <Button
+        onClick={() => {
+          useDialog('确定要退出房间吗？', {
+            onConfirm: () => {
+              onExitRoom();
+              navigate('/createRoom', { replace: true });
+            },
+            title: '提示',
+          });
+        }}
+        className="control-btn"
+        color="error"
+        sx={{ padding: '0 20px' }}
+      >
         <LogoutSharpIcon />
         退出
       </Button>

@@ -11,6 +11,11 @@ const sequelize = new Sequelize('demo', 'root', '00000000', {
 const initModel = () => {
   const User = userModel(sequelize, DataTypes);
   const Room = roomModel(sequelize, DataTypes);
+
+  // // 设置表之间的关系
+  // Room.hasMany(User);
+  // User.belongsTo(Room);
+
   return {
     User,
     Room

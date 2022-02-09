@@ -10,8 +10,8 @@ import Typography from '@mui/material/Typography';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import axios from '../utils/interceptor';
 import { serve } from '../const/api';
 import useMessage from './hook/useMessage';
 import { Room, User } from '../context/index';
@@ -43,7 +43,7 @@ export default function CreateRoom() {
   const [layout, setLayout] = useState('basic');
   const [codeRequire, setCodeRequire] = useState(false);
   const { setRoom } = useContext(Room);
-  const { setUser } = useContext(User);
+  const { user, setUser } = useContext(User);
   const navigate = useNavigate();
 
   const {
@@ -54,7 +54,7 @@ export default function CreateRoom() {
   } = useForm();
 
   const handelCreateRoom = (data: any) => {
-    axios.post(`${serve.domain}/room/createRoom`, { ...data }).then((res: any) => {
+    axios.post(`${serve.domain}/room/createRoom`, { ...data, userId: user.uuid }).then((res: any) => {
       if (res && res.code === 1) {
         useMessage(res.message, { type: 'success' });
         setRoom(res.data);
@@ -68,7 +68,7 @@ export default function CreateRoom() {
   };
 
   const handelJoinRoom = (data: any) => {
-    axios.post(`${serve.domain}/room/enterRoom`, { ...data }).then((res: any) => {
+    axios.post(`${serve.domain}/room/enterRoom`, { ...data, userId: user.uuid }).then((res: any) => {
       if (res && res.code === 1) {
         useMessage(res.message, { type: 'success' });
         setRoom(res.data);

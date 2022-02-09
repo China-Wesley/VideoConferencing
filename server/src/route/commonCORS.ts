@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /** 负责转发客户端跨域的请求 */
 import express = require('express');
+import { crosOptions } from '../const/index';
 const cors = require('cors');
 
 const axios = require('axios');
@@ -39,7 +40,7 @@ const commonCORS = (req: express.Request, res: express.Response) => {
   });
 };
 
-router.options('/', cors());
-router.post('/', cors(), commonCORS);
+router.options('/', cors(crosOptions));
+router.post('/', cors(crosOptions), commonCORS);
 
 export default router;

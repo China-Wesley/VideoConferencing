@@ -36,14 +36,22 @@ export const loadImage = (url: string) => new Promise<HTMLImageElement | cError>
  * @param mediaConstraints mediaConfig
  * @returns
  */
-export const getMedia = (mediaConstraints: any) => new Promise((resolve, reject) => {
+export const getMedia = (mediaConstraints: any, isScreen = false) => new Promise((resolve, reject) => {
   if (window.navigator) {
     if (window.navigator.mediaDevices) {
-      navigator.mediaDevices.getUserMedia(mediaConstraints).then((stream: any) => {
-        resolve(stream);
-      }).catch((error) => {
-        reject(error);
-      });
+      if (isScreen) {
+        navigator.mediaDevices.getDisplayMedia(mediaConstraints).then((stream: any) => {
+          resolve(stream);
+        }).catch((error: any) => {
+          reject(error);
+        });
+      } else {
+        navigator.mediaDevices.getUserMedia(mediaConstraints).then((stream: any) => {
+          resolve(stream);
+        }).catch((error: any) => {
+          reject(error);
+        });
+      }
     } else {
       reject(new Error('您的浏览器不支持视频通话！'));
     }

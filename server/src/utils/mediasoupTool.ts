@@ -3,6 +3,15 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const config = require('../../config');
 
+export const parseTransport = (transport: any) => {
+  return {
+    id: transport.id,
+    iceParameters: transport.iceParameters,
+    iceCandidates: transport.iceCandidates,
+    dtlsParameters: transport.dtlsParameters
+  };
+};
+
 /** 创建一个Transport 这里选用默认的WebRtcTransport */
 export async function createWebRtcTransport(mediasoupRouter: any) {
   // 配置
@@ -30,13 +39,13 @@ export async function createWebRtcTransport(mediasoupRouter: any) {
   }
 
   return {
-    transport,
-    params: {
-      id: transport.id,
-      iceParameters: transport.iceParameters,
-      iceCandidates: transport.iceCandidates,
-      dtlsParameters: transport.dtlsParameters
-    }
+    transport
+    // params: {
+    //   id: transport.id,
+    //   iceParameters: transport.iceParameters,
+    //   iceCandidates: transport.iceCandidates,
+    //   dtlsParameters: transport.dtlsParameters
+    // }
   } as any;
 }
 

@@ -6,11 +6,12 @@ import { v4 as uuidv4 } from 'uuid';
 import dbError from '../const/dbError';
 const cors = require('cors');
 const encode = require('../utils/encode');
+import { crosOptions } from '../const/index';
 
 const router = express.Router();
 
-router.options('/*', cors());
-router.post('/login', cors(), (req: express.Request | any, res: express.Response) => {
+router.options('/*', cors(crosOptions));
+router.post('/login', cors(crosOptions), (req: express.Request | any, res: express.Response) => {
   const { Models: { User } } = req.context;
   const { name, password } = req.body;
   const savePassword = encode.genPassword(password);
@@ -59,7 +60,7 @@ router.post('/login', cors(), (req: express.Request | any, res: express.Response
   });
 });
 
-router.post('/sign', cors(), (req: express.Request | any, res: express.Response) => {
+router.post('/sign', cors(crosOptions), (req: express.Request | any, res: express.Response) => {
   const { Models: { User } } = req.context;
   const { name, password } = req.body;
 

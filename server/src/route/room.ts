@@ -5,15 +5,16 @@ const cors = require('cors');
 const { randomNum } = require('../utils/utils');
 import initMediasoupWorker from '../initMediasoupWorker';
 import initWebSocket from '../initWebSocket';
+import { crosOptions } from '../const/index';
 // const { handleAxiosError } = require('../utils/utils');
 const roomUUid = [];
 
 const router = express.Router();
-router.options('/*', cors());
+router.options('/*', cors(crosOptions));
 
-router.post('/createRoom', cors(), (req: express.Request | any, res: express.Response) => {
-  const { Models: { Room } } = req.context;
-  const { roomCode } = req.body;
+router.post('/createRoom', cors(crosOptions), (req: express.Request | any, res: express.Response) => {
+  const { Models: { Room, User } } = req.context;
+  const { roomCode, userId } = req.body;
 
   let uuid = 0;
   while (!uuid || roomUUid.includes(uuid)) {
@@ -27,31 +28,45 @@ router.post('/createRoom', cors(), (req: express.Request | any, res: express.Res
     initWebSocket(uuid);
     console.log('房间服务创建好了');
   }).catch();
+
   Room.create({
     uuid,
     password: roomCode
   }).then(() => {
-    res.send({
-      code: 1,
-      status: 'SUCCESS',
-      message: `创建房间成功！房间号为${uuid}`,
-      data: {
-        roomId: uuid,
-        password: roomCode
-      }
+    User.update(
+      { roomId: uuid },
+      { where: { uuid: userId } }
+    ).then(() => {
+      res.send({
+        code: 1,
+        status: 'SUCCESS',
+        message: `创建房间成功！房间号为${uuid}`,
+        data: {
+          roomId: uuid,
+          password: roomCode
+        }
+      });
+    }).catch((error) => {
+      console.log(error);
+      res.send({
+        code: -2,
+        status: 'FAIL',
+        message: '创建房间失败，roomId无法入库！'
+      });
     });
-  }).catch(() => {
+  }).catch((error) => {
     res.send({
       code: -1,
       status: 'FAIL',
-      message: '创建房间失败！'
+      message: '创建房间失败！',
+      describe: error
     });
   });
 });
 
-router.post('/enterRoom', cors(), (req: express.Request | any, res: express.Response) => {
-  const { Models: { Room } } = req.context;
-  const { roomId, roomCode } = req.body;
+router.post('/enterRoom', cors(crosOptions), (req: express.Request | any, res: express.Response) => {
+  const { Models: { Room, User } } = req.context;
+  const { roomId, roomCode, userId } = req.body;
 
   Room.findAll({
     attributes: ['uuid', 'password'],
@@ -62,14 +77,26 @@ router.post('/enterRoom', cors(), (req: express.Request | any, res: express.Resp
     if (data && data.length === 1) {
       if (data[0].password) {
         if (roomCode === data[0].password) {
-          res.send({
-            code: 1,
-            status: 'SUCCESS',
-            message: '进入房间成功！',
-            data: {
-              roomId,
-              roomCode
-            }
+          User.update(
+            { roomId: roomId },
+            { where: { uuid: userId } }
+          ).then(() => {
+            res.send({
+              code: 1,
+              status: 'SUCCESS',
+              message: '进入房间成功！',
+              data: {
+                roomId,
+                roomCode
+              }
+            });
+          }).catch((error) => {
+            console.log(error);
+            res.send({
+              code: -3,
+              status: 'FAIL',
+              message: '进入房间失败，roomId无法入库！'
+            });
           });
         } else {
           res.send({
@@ -79,14 +106,25 @@ router.post('/enterRoom', cors(), (req: express.Request | any, res: express.Resp
           });
         }
       } else {
-        res.send({
-          code: 1,
-          status: 'SUCCESS',
-          message: '进入房间成功！',
-          data: {
-            roomId,
-            roomCode
-          }
+        User.update(
+          { roomId: roomId },
+          { where: { uuid: userId } }
+        ).then(() => {
+          res.send({
+            code: 1,
+            status: 'SUCCESS',
+            message: '进入房间成功！',
+            data: {
+              roomId,
+              roomCode
+            }
+          });
+        }).catch(() => {
+          res.send({
+            code: -3,
+            status: 'FAIL',
+            message: '进入房间失败，roomId无法入库！'
+          });
         });
       }
     } else {
@@ -105,9 +143,9 @@ router.post('/enterRoom', cors(), (req: express.Request | any, res: express.Resp
   });
 });
 
-router.post('/leaveRoom', cors(), (req: express.Request | any, res: express.Response) => {
-  const { Models: { Room } } = req.context;
-  const { roomId } = req.body;
+router.post('/leaveRoom', cors(crosOptions), (req: express.Request | any, res: express.Response) => {
+  const { Models: { Room, User } } = req.context;
+  const { roomId, userId } = req.body;
 
   const idIndex = roomUUid.indexOf(roomId);
   roomUUid.splice(idIndex, 1);
@@ -117,13 +155,24 @@ router.post('/leaveRoom', cors(), (req: express.Request | any, res: express.Resp
       uuid: roomId
     }
   }).then(() => {
-    res.send({
-      code: 1,
-      status: 'FAIL',
-      message: '已退出房间，您是最后一位成员，房间已自动关闭！',
-      data: {
-        roomId
-      }
+    User.update(
+      { roomId: null },
+      { where: { uuid: userId } }
+    ).then(() => {
+      res.send({
+        code: 1,
+        status: 'SUCCESS',
+        message: '已退出房间，您是最后一位成员，房间已自动关闭！',
+        data: {
+          roomId
+        }
+      });
+    }).catch(() => {
+      res.send({
+        code: -2,
+        status: 'FAIL',
+        message: '退出房间失败，roomId无法删除！'
+      });
     });
   }).catch(() => {
     res.send({
