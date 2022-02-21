@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import useMessage from './hook/useMessage';
 import Videox from './component/Videox';
 import { getMedia } from '../utils/utils';
-import { RTCStream, Room } from '../context/index';
+import { RTCStream, Room, User } from '../context/index';
 // import useConnect from './hook/useConnect';
 
 const defaultMediaContain = {
@@ -30,9 +30,10 @@ export default function MediaTest() {
   const [camOpen, setCamOpen] = useState(true);
   const { setRTCStream } = useContext(RTCStream);
   const { room } = useContext(Room);
+  const { user, setUser } = useContext(User);
   const RtcStream: any = useRef();
   const navigate = useNavigate();
-
+  const [disabled, setDisabled] = useState(true);
   const videoPlay = () => {
     const video = testVideo.current.current;
 
@@ -51,10 +52,13 @@ export default function MediaTest() {
 
   const setVideoMedia = (mediaContain?: any) => {
     const config = { ...defaultMediaContain, ...mediaContain };
+    console.log(config);
     getMedia(config).then((stream: any) => {
       RtcStream.current = stream;
       videoPlay();
+      setDisabled(false);
     }).catch((error) => {
+      console.log(error);
       useMessage(`获取 摄像头/麦克风 数据失败${error.message}`, {
         type: 'error',
       });
@@ -160,8 +164,12 @@ export default function MediaTest() {
       <Button
         variant="contained"
         fullWidth
+        disabled={disabled}
         onClick={() => {
           setRTCStream(RtcStream.current);
+          setUser({
+            ...user, micOpen, camOpen, defaultMic: micOpen, defaultCam: camOpen,
+          });
           room && room.roomId && navigate(`/room/${room.roomId}`);
         }}
       >

@@ -7,6 +7,7 @@ import {
   VideocamOff as VideocamOffIcon,
 } from '@mui/icons-material';
 import VolumeRate from './VolumeRate';
+import CAvatar from './Avatar';
 
 const { forwardRef } = React;
 
@@ -20,6 +21,7 @@ const Videox = forwardRef((props: any, ref) => {
     height,
     style = {},
     stream = null,
+    name = '',
   } = props;
   const { wrap: wrapStyle, video: videoStyle } = style;
   const videoRef: any = useRef(null);
@@ -56,6 +58,33 @@ const Videox = forwardRef((props: any, ref) => {
         autoPlay
         ref={videoRef}
       />
+      {
+        !camOpen && (
+          <Box
+            sx={{
+              width,
+              height,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              background: '#000',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            {name && (
+            <CAvatar
+              sx={{
+                width: '60px',
+                height: '60px',
+              }}
+              name={name}
+            />
+            )}
+          </Box>
+        )
+      }
       {/* {micOpen}
       {volumeRate}
       {user} */}

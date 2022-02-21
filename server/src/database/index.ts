@@ -3,6 +3,7 @@
 import { DataTypes, Sequelize } from 'sequelize';
 import userModel from './model/user';
 import roomModel from './model/room';
+
 const sequelize = new Sequelize('demo', 'root', '00000000', {
   host: 'localhost',
   dialect: 'mysql'

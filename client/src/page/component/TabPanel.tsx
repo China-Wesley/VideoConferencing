@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 
 export default function TabPanel(props: any) {
   const {
-    children, value, index, ...other
+    children, value, index, style, ...other
   } = props;
   return (
     <div
@@ -13,8 +13,9 @@ export default function TabPanel(props: any) {
       id={`full-width-tabpanel-${index}`}
       aria-labelledby={`full-width-tab-${index}`}
       style={{
-        overflowY: 'scroll',
+        overflowY: 'auto',
         paddingTop: '10px',
+        ...style,
       }}
       {...other}
     >

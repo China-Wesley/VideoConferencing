@@ -1,9 +1,9 @@
 import { Device } from 'mediasoup-client';
 
 export function socketEmit(socket: any, options: any) {
-  const { userId } = options;
+  const { userId, userName } = options;
   return (type: string, data = {}) => new Promise((resolve) => {
-    socket.emit(type, { userId, ...data }, resolve);
+    socket.emit(type, { userId, userName, ...data }, resolve);
   });
 }
 

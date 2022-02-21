@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable max-len */
 export default function usePublish(props: any) {
   const {
@@ -21,16 +22,18 @@ export default function usePublish(props: any) {
   let transportProduceErrorCallback: any = () => {};
   const transportProduceError = (callback: any) => { transportProduceErrorCallback = callback; };
 
-  const addProducer = (otherStream: any, screen = false) => {
+  // 但凡有新增都走这
+  const addProducer = (otherStream: any, screen = false, tracksHook = (tracks: any[]) => {}) => {
     isScreen = screen;
     const tracks = otherStream.getTracks();
+    tracksHook(tracks);
+    currentProduce = 0;
     produceNumber = tracks.length;
     return Promise.all(tracks.map((track: any) => {
       const produceParams = { track };
       return transport.produce(produceParams);
     }));
   };
-  // let addProducer = () => {};
 
   return new Promise((resolve, reject) => {
     // 服务端创建一个produceTransport 以接收承载即将发送过来的数据流
@@ -55,6 +58,7 @@ export default function usePublish(props: any) {
       transport.on('produce', async ({ kind, rtpParameters }: any, callback: any, errback: any) => {
         try {
         // emit produce
+          console.log(transport, 'transport--->');
           currentProduce += 1;
           const { id, userId } = await socket.socketEmit('produce', {
             transportId: transport.id,
@@ -91,6 +95,7 @@ export default function usePublish(props: any) {
         }
       });
 
+      // 初始化时才调用
       const tracks = stream.getTracks(); // 获取视频轨道
       produceNumber = tracks.length;
       return Promise.all(tracks.map((track: any) => {

@@ -14,13 +14,6 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import Avatar from '@mui/material/Avatar';
-import {
-  Videocam as VideocamIcon,
-  VideocamOff as VideocamOffIcon,
-  MicSharp as MicSharpIcon,
-  MicOffSharp as MicOffSharpIcon,
-} from '@mui/icons-material';
 import UserControl from './component/UserControl';
 import TabPanel from './component/TabPanel';
 import { RTCStream as RTCStreamContext, Room as RoomContext, User as UserContext } from '../context/index';
@@ -30,31 +23,11 @@ import useSubscribe from './hook/useSubscribe';
 import Videox from './component/Videox';
 import useMessage from './hook/useMessage';
 import { getMedia } from '../utils/utils';
+import Member from './component/Member';
+import Chat from './component/Chat';
+import SendMessage from './component/SendMessage';
 
 const drawerWidth = 400;
-
-function stringToColor(string: string) {
-  let hash = 0;
-  let i;
-  /* eslint-disable no-bitwise */
-  for (i = 0; i < string.length; i += 1) {
-    hash = string.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  let color = '#';
-  for (i = 0; i < 3; i += 1) {
-    const value = (hash >> (i * 8)) & 0xff;
-    color += `00${value.toString(16)}`.substr(-2);
-  }
-  /* eslint-enable no-bitwise */
-
-  return color;
-}
-
-function stringAvatar(name: string) {
-  return {
-    children: `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`,
-  };
-}
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
   open?: boolean;
@@ -95,8 +68,32 @@ export default function PersistentDrawerRight() {
   const socketCache: any = useRef();
   const addProducerFunc: any = useRef();
   const [videoSources, setVideoSources] = useState([] as any);
+  const [memberList, setMemberList] = useState([] as any);
+  const [chatList, setChatList] = useState([] as any);
+  const screenStream: any = useRef({});
+  const [currentSource, setCurrentSource] = useState<any>(null);
+
   // const [publishTransport, setPublishTransport] = useState(null);
   //   const peimaryVideo: any = useRef();
+
+  useEffect(() => {
+    streamCache.current[user.uuid] = RTCStream;
+    const currentVideoSource = {
+      micOpen: user.micOpen,
+      camOpen: user.camOpen,
+      shareScreen: false,
+      userInfo: {
+        userName: user.username,
+        userId: user.uuid,
+      },
+      stream: RTCStream,
+    };
+    setMemberList([
+      currentVideoSource,
+    ]);
+    setVideoSources({ ...streamCache.current });
+    setCurrentSource(user.uuid);
+  }, []);
 
   const getRoomId = () => {
     if (room && room.roomId) {
@@ -107,18 +104,24 @@ export default function PersistentDrawerRight() {
     return paths[(paths.length - 1) >= 0 ? (paths.length - 1) : 0];
   };
 
-  const shareScreen = () => {
-    getMedia({ video: true }, true).then((stream: any) => {
-      addProducerFunc.current(stream, true);
-    }).catch((error: any) => {
-      useMessage(error.message, { type: 'error' });
+  useEffect(() => {
+    socketCache.current && socketCache.current.on('someoneSendMessage', (data: any) => {
+      setChatList([...chatList, data.messageObj]);
     });
-  };
+  }, [socketCache.current, chatList]);
 
   useEffect(() => {
     const {
       socketConnected,
-    } = useConnect({ path: `/${getRoomId()}` }, { userId: user.uuid });
+      // socketDisconnect,
+    } = useConnect({ path: `/${getRoomId()}` }, { ...user, userId: user.uuid, userName: user.username });
+
+    // socketDisconnect(() => {
+    //   const tracks = RTCStream.getTracks();
+    //   tracks.forEach((track: any) => {
+    //     track.stop();
+    //   });
+    // });
 
     socketConnected((device: any, socket: any) => {
       // publish
@@ -130,7 +133,14 @@ export default function PersistentDrawerRight() {
         Object.keys(streamCache.current).forEach((id: string) => {
           tempSources.push(streamCache.current[id]);
         });
-        setVideoSources([...tempSources]);
+        // setVideoSources([...tempSources]);
+        setVideoSources(streamCache.current);
+      });
+      socket.on('memberListUpdate', (data: any) => {
+        const { memberList: remoteMemberList } = data;
+        console.log(remoteMemberList, 'remoteMemberList-->');
+        setMemberList(remoteMemberList);
+        // setChatList([]);
       });
       socket.on('broadcast', (data: any) => {
         const { userId } = data;
@@ -141,7 +151,9 @@ export default function PersistentDrawerRight() {
           Object.keys(streamCache.current).forEach((id: string) => {
             tempSources.push(streamCache.current[id]);
           });
-          setVideoSources([...tempSources]);
+          console.warn(tempSources, streamCache.current);
+          // setVideoSources([...tempSources]);
+          setVideoSources({ ...streamCache.current });
         }).catch((error: any) => {
           console.log(error);
         });
@@ -154,7 +166,9 @@ export default function PersistentDrawerRight() {
           addProducerFunc.current = addProducer;
           socket.socketEmit('checkRoom')
             .then((checkData: any) => {
-              const { hasMember, member } = checkData;
+              const { hasMember, member, memberList: remoteMemberList } = checkData;
+              console.log(memberList);
+              setMemberList(remoteMemberList);
               if (hasMember) {
                 let count = 0;
                 member.forEach((memberId: string) => {
@@ -168,7 +182,8 @@ export default function PersistentDrawerRight() {
                       Object.keys(streamCache.current).forEach((id: string) => {
                         tempSources.push(streamCache.current[id]);
                       });
-                      setVideoSources([...tempSources]);
+                      // setVideoSources([...tempSources]);
+                      setVideoSources(streamCache.current);
                     }
                   }).catch((error: any) => {
                     console.log(error);
@@ -187,8 +202,13 @@ export default function PersistentDrawerRight() {
     });
   }, []);
 
-  const handleDrawerOpen = () => {
-    setOpen(true);
+  const handleDrawerOpen = (tab: number) => {
+    if (tab !== tabValue && open) {
+      setTabValue(tab);
+    } else {
+      setTabValue(tab);
+      setOpen(!open);
+    }
   };
 
   const handleDrawerClose = () => {
@@ -201,6 +221,102 @@ export default function PersistentDrawerRight() {
 
   const handleExitRoom = () => {
     socketCache.current && socketCache.current.disconnect();
+  };
+
+  const handelPause = (kind: string) => {
+    // socketCache.current && socketCache.current.socketEmit('pause', { userId: user.uuid, kind });
+    socketCache.current && socketCache.current.socketEmit('pause', { userId: user.uuid, kind }).then((res: any) => {
+      console.log(res, 'members--->');
+      setMemberList(res.memberList);
+    }).catch((error: any) => {
+      console.log(error, 'members---->');
+    });
+  };
+
+  const handleContinue = (kind: string) => {
+    // socketCache.current && socketCache.current.socketEmit('continue', { userId: user.uuid, kind });
+    socketCache.current && socketCache.current.socketEmit('continue', { userId: user.uuid, kind }).then((res: any) => {
+      console.log(res, 'members--->');
+      setMemberList(res.memberList);
+    }).catch((error: any) => {
+      console.log(error);
+    });
+  };
+
+  const handleAddNewTrack = (kind: any, isScreen = false) => getMedia({ [kind]: true })
+    .then((stream: any) => addProducerFunc.current(stream, isScreen, (tracks: any) => {
+      console.log(tracks, 'tracks--->');
+      tracks.forEach((track: any) => {
+        RTCStream.addTrack(track);
+      });
+    }));
+
+  const handleShareScreen = () => getMedia({ video: true }, true).then((stream: any) => {
+    screenStream.current = stream;
+    addProducerFunc.current(stream, true);
+  });
+
+  const handleStopShareScreen = () => {
+    const tracks = screenStream.current.getTracks();
+    tracks.forEach((track: any) => {
+      track.stop();
+    });
+  };
+
+  const renderCurrentVideo = () => {
+    const curVideo: any[] = Object.keys(videoSources).filter((key: string) => {
+      if (key === currentSource) {
+        return true;
+      }
+      return false;
+    });
+    if (curVideo.length) {
+      return curVideo.map((key: any) => {
+        const stream = videoSources[key];
+        const {
+          micOpen, camOpen, userInfo: { userName },
+        } = memberList.find((item: any) => {
+          const { userInfo: { userId: uuid } } = item;
+          if (uuid === key) {
+            return true;
+          }
+          return false;
+        });
+        return (
+          <Videox
+                    // ref={testVideo}
+            name={userName}
+            width="100%"
+            height="100%"
+            micOpen={micOpen}
+            camOpen={camOpen}
+            stream={stream}
+            style={{
+              video: {
+                maxHeight: '100%',
+              },
+            }}
+          />
+        );
+      });
+    }
+    // setCurrentSource(user.uuid);
+    return (
+      <Videox
+                  // ref={testVideo}
+        name={user.username}
+        width="100%"
+        height="100%"
+        micOpen={user.micOpen}
+        camOpen={user.camOpen}
+        stream={RTCStream}
+        style={{
+          video: {
+            maxHeight: '100%',
+          },
+        }}
+      />
+    );
   };
 
   return (
@@ -218,46 +334,67 @@ export default function PersistentDrawerRight() {
         }}
         >
           {
-            videoSources.map((item: any) => (
-              <Box
-                key={item.id}
-                sx={{
-                  flex: '0 0 200px', height: '100%', backgroundColor: '#ccc', margin: '0 5px',
-                }}
-              >
-                {item[0]}
-                {/* <video style={{ width: '100%', height: '100%', backgroundColor: '#000' }} autoPlay src="" /> */}
-                <Videox
-                    // ref={testVideo}
-                  width="100%"
-                  height="100%"
-                  micOpen
-                  camOpen
-                  stream={item}
-                />
-              </Box>
-            ))
+            Object.keys(videoSources).map((key: string) => {
+              const stream = videoSources[key];
+              const {
+                micOpen, camOpen, userInfo: { userName },
+              } = memberList.find((item: any) => {
+                const { userInfo: { userId: uuid } } = item;
+                if (uuid === key) {
+                  return true;
+                }
+                return false;
+              });
+              return (
+                <Box
+                  key={key}
+                  sx={{
+                    flex: '0 0 200px',
+                    height: '100%',
+                    backgroundColor: '#ccc',
+                    margin: '0 5px',
+                    border: `${key === currentSource ? '3px solid #1565c0' : ''}`,
+                    boxSizing: 'border-box',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      border: '3px solid #5595ec',
+                    },
+                  }}
+                  onClick={() => {
+                    setCurrentSource(key);
+                  }}
+                >
+                  <Videox
+                    name={userName}
+                    width="100%"
+                    height="100%"
+                    micOpen={micOpen}
+                    camOpen={camOpen}
+                    stream={stream}
+                  />
+                </Box>
+              );
+            })
         }
         </Box>
         <Box sx={{
           display: 'flex', overflowX: 'scroll', justifyContent: 'center', flex: '6',
         }}
         >
-          <Videox
-              // ref={testVideo}
-            width="100%"
-            height="100%"
-            micOpen
-            camOpen
-            stream={RTCStream}
-            style={{
-              video: {
-                maxHeight: '100%',
-              },
-            }}
-          />
+          {renderCurrentVideo()}
         </Box>
-        <UserControl onDrawerOpen={handleDrawerOpen} onExitRoom={handleExitRoom} onShareScreen={shareScreen} />
+        <UserControl
+          socket={socketCache.current}
+          micOpen={user.micOpen}
+          camOpen={user.camOpen}
+          onPause={handelPause}
+          onContinue={handleContinue}
+          onDrawerOpen={handleDrawerOpen}
+          onExitRoom={handleExitRoom}
+          onShareScreen={handleShareScreen}
+          onStopShareScreen={handleStopShareScreen}
+          onAddNewTrack={handleAddNewTrack}
+        />
       </Main>
       <Drawer
         sx={{
@@ -265,6 +402,7 @@ export default function PersistentDrawerRight() {
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: drawerWidth,
+            overflow: 'hidden',
           },
         }}
         variant="persistent"
@@ -281,82 +419,34 @@ export default function PersistentDrawerRight() {
           <Tab sx={{ color: '#b0bec5' }} label="聊天记录" />
         </Tabs>
         <TabPanel index={0} value={tabValue}>
-          {
-                [1, 2, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,,1, 1, 1, 1, 1].map(() => (
-                  <Box sx={{
-                    padding: '15px 30px', color: '#b0bec5', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: stringToColor('吴 某'),
-                          marginRight: 2,
-                          fontSize: '14px',
-                        }}
-                        {...stringAvatar('吴 某')}
-                      />
-                      Name
-                    </Box>
-                    <Box sx={{ minWidth: '65px', display: 'flex', justifyContent: 'space-between' }}>
-                      {
-                            true ? (<VideocamIcon />) : (
-                              <VideocamOffIcon sx={{ color: '#dd2c00' }} />
-                            )
-                        }
-                      {
-                            false ? (
-                              <MicSharpIcon />
-                            ) : (
-                              <MicOffSharpIcon sx={{ color: '#dd2c00' }} />
-                            )
-                        }
-                    </Box>
-                  </Box>
-                ))
-            }
+          <Box>
+            {
+                  memberList && memberList.map((item: any) => (
+                    <Member memberInfo={item} />
+                  ))
+              }
+          </Box>
         </TabPanel>
-        <TabPanel index={1} value={tabValue}>
-          {
-                [1, 2, 3, 1, 1, 1, 1, 1].map((item) => (
-                  <Box sx={{ padding: '10px', overflow: 'hidden' }}>
-                    <Box sx={{
-                      color: '#b0bec5', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: (item === 1 ? 'row-reverse' : 'row') }}>
-                        <Avatar
-                          sx={{
-                            bgcolor: stringToColor('吴 某'),
-                            marginRight: (item === 1 ? 0 : 2),
-                            marginLeft: (item === 1 ? 2 : 0),
-                            fontSize: '14px',
-                          }}
-                          {...stringAvatar('吴 某')}
-                        />
-                        <Box sx={{ background: '#121212', borderRadius: 1, p: 1 }}>
-                          Aliquam eget finibus ante
-                          Aliquam eget finibus ante
-                          Aliquam eget finibus ante
-                          Aliquam eget finibus ante
-                          Aliquam eget finibus ante
-                        </Box>
-                      </Box>
-                    </Box>
-                    <Box sx={{
-                      fontSize: '12px',
-                      padding: '0 60px',
-                      float: (item === 1 ? 'right' : 'left'),
-                      marginTop: '5px',
-                      color: '#b0bec5',
-                    }}
-                    >
-                      1.30 15:00
-                    </Box>
-                  </Box>
-                ))
-            }
+        <TabPanel index={1} value={tabValue} style={{ height: 'calc(100% - 160px)' }}>
+          <Box>
+            {
+                  // chatList && chatList.map((item: any) => (
+                  //   <Chat chatInfo={item} />
+                  // ))
+                  chatList.map((item: any) => (
+                    <Chat chatInfo={item} />
+                  ))
+              }
+          </Box>
         </TabPanel>
+        {tabValue === 1 && (
+          <SendMessage handleSendMessage={async (message: any) => {
+            if (!message) return;
+            const msgObj = await socketCache.current.socketEmit('sendMessage', { message });
+            setChatList([...chatList, msgObj]);
+          }}
+          />
+        )}
       </Drawer>
     </Box>
   );

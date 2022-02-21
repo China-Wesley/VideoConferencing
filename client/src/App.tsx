@@ -1,3 +1,4 @@
+/* eslint-disable import/extensions */
 /* eslint-disable react/jsx-no-constructed-context-values */
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
@@ -10,6 +11,7 @@ import MediaTest from './page/MediaTest';
 import Room from './page/Room';
 import { User as UserContext, Room as RoomContext, RTCStream as RTCStreamContext } from './context';
 import useAuth from './page/hook/useAuth';
+import useRoom from './page/hook/useRoom';
 import { parseCookie } from './utils/utils';
 
 const vuser = Cookie.get('vuser');
@@ -34,8 +36,8 @@ function App() {
               <Route path="*" element={<NoMatch />} />
               <Route path="/" element={<Login />} />
               <Route path="/createRoom" element={useAuth(<CreateRoom />, true)} />
-              <Route path="/mediaTest" element={useAuth(<MediaTest />, true)} />
-              <Route path="/room/:id" element={useAuth(<Room />, true)} />
+              <Route path="/mediaTest" element={useRoom(useAuth(<MediaTest />, true), room)} />
+              <Route path="/room/:id" element={useRoom(useAuth(<Room />, true), room)} />
             </Routes>
           </RTCStreamContext.Provider>
         </RoomContext.Provider>
